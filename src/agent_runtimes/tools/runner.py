@@ -3,6 +3,7 @@ import inspect
 import json
 
 from openai.types.responses import ResponseFunctionToolCall
+from tasks.models import Task
 
 from agent_runtimes.tools.registry import ToolRegistry
 
@@ -29,7 +30,7 @@ class ToolRunner:
                 # 工具执行成功，直接返回
                 return {
                     "success": True,
-                    "result": json.dumps(result),
+                    "result": result,
                 }
             # 执行超时，直接返回错误信息
             except TimeoutError:
@@ -51,7 +52,19 @@ class ToolRunner:
             print(f"Tool {tool_name} retrying...")
             await asyncio.sleep(1)
 
-    # 运行工具，得到tool_call和result绑定的元组
+    async def run_task(self, task: Task) -> Task:
+        task.mark_running()
+
+        result = await self.run(task.tool_name, task.arguments)
+
+        if result["success"]:
+            task.mark_success(result)
+        else:
+            task.mark_failed(result["error"])
+
+        return task
+
+    # 运行工具，得到一个tool_call和result绑定的元组
     async def _excute(self, tool_call: ResponseFunctionToolCall):
         tool_name = tool_call.name
 
