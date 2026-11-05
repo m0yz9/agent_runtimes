@@ -48,6 +48,10 @@ async def _test():
         task_id="C",
         tool_name="brewing",
         arguments={"weather": "晴天", "current_time": "25号"},
+        arguments={
+            "weather": {"from_task": "A"},
+            "current_time": {"from_task": "B"},
+        },
         dependencies=["A", "B"],
     )
     tasks = {
